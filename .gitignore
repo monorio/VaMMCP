@@ -1,0 +1,56 @@
+# Local / secrets
+.env
+.env.*
+!.env.example
+*.local.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.env/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Packed plugin artifacts (publish via GitHub Releases only)
+*.var
+dist-var/
+
+# Never ship a VAM/VaMX install or user library
+VaM.exe
+VaM_Data/
+VaMX_Updater.exe
+AddonPackages/
+Saves/
+Cache/
+Custom/
+BrowserProfile/
+*.vamcache
+*.vamcachemeta
+*.vamcachejson
+
+# Logs / screenshots
+logs/
+*.log
+*.png
+*.jpg
+*.jpeg
+*.webp
