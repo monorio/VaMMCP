@@ -6,7 +6,7 @@ Install and client config (Codex, Claude Code, Cursor, Grok, Copilot) are in
 the repository root. Agents should follow [AGENTS.md](../AGENTS.md):
 
 - [README.md](../README.md) (English)
-- [README_zh-CN.md](../README_zh-CN.md) (中文)
+- [docs/zh.md](../docs/zh.md) (中文)
 
 ```bash
 # from this directory

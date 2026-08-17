@@ -1,6 +1,6 @@
 # VamMCP
 
-[English](README.md) | [中文](README_zh-CN.md)
+[English](README.md) | [中文](docs/zh.md)
 
 > **Agents (Codex, Claude Code, Cursor, Grok, Copilot, …):** read **[AGENTS.md](AGENTS.md)** first and follow it. Do not improvise a VAM workflow from this README.
 

@@ -1,12 +1,12 @@
 # VamMCP
 
-[English](README.md) | [中文](README_zh-CN.md)
+[English](../README.md) | [中文](zh.md)
 
-> **Agent（Codex、Claude Code、Cursor、Grok、Copilot 等）：先读 [AGENTS.md](AGENTS.md) 并按它操作。** 不要只凭本 README 自己猜 VAM 流程。
+> **Agent（Codex、Claude Code、Cursor、Grok、Copilot 等）：先读 [AGENTS.md](../AGENTS.md) 并按它操作。** 不要只凭本 README 自己猜 VAM 流程。
 
 非官方 [MCP](https://modelcontextprotocol.io/) 服务 + Virt-A-Mate **Session 插件**。用对话加载你本机库里已经有的场景、Look、服装、姿势和表情。
 
-与 Mesh VR / Virt-A-Mate **无隶属关系**。你需要自己拥有合法的 VAM 或 VaMX。详见 [NOTICE.md](NOTICE.md)。
+与 Mesh VR / Virt-A-Mate **无隶属关系**。你需要自己拥有合法的 VAM 或 VaMX。详见 [NOTICE.md](../NOTICE.md)。
 
 **不能生成角色或衣服**，只能搜索并加载硬盘上已有的文件。
 
@@ -54,7 +54,7 @@ MCP 客户端  →  vam-mcp（Python）  →  Saves/PluginData/vam-mcp/*.json  �
 #### 方式 A — `.var` 包（日常用这个）
 
 1. 拿到 `VamMcp.Bridge.N.var`：
-   - 从 [Releases](../../releases) 下载，或
+   - 从 [Releases](https://github.com/monorio/VaMMCP/releases) 下载，或
    - 在本仓库执行 `.\scripts\pack-var.ps1 -Version 1`（生成 `dist-var\VamMcp.Bridge.1.var`）。
 2. 把这个文件复制到 `VaM.exe` 旁边的 **`AddonPackages`** 目录：
 
@@ -118,11 +118,11 @@ python -m venv .venv
 
 两处路径都要改：`command` 是本仓库 venv 里的 Python，`VAM_ROOT` 是 VAM / VaMX 安装目录。改完后重启 Agent，或刷新它的 MCP 列表。
 
-请把 **本仓库** 当作工作区打开，这样 Agent 会自动加载 [AGENTS.md](AGENTS.md)。
+请把 **本仓库** 当作工作区打开，这样 Agent 会自动加载 [AGENTS.md](../AGENTS.md)。
 
 #### Codex（CLI / IDE）
 
-把 [examples/codex.config.toml](examples/codex.config.toml) 追加到 `%USERPROFILE%\.codex\config.toml`（或项目里的 `.codex\config.toml`）：
+把 [examples/codex.config.toml](../examples/codex.config.toml) 追加到 `%USERPROFILE%\.codex\config.toml`（或项目里的 `.codex\config.toml`）：
 
 ```toml
 [mcp_servers.vam]
@@ -143,7 +143,7 @@ codex mcp add vam --env VAM_ROOT=E:\VaMX -- E:\VamMCP\mcp\.venv\Scripts\python.e
 
 #### Grok
 
-把 [examples/grok.config.toml](examples/grok.config.toml) 追加到 `%USERPROFILE%\.grok\config.toml`（或项目里的 `.grok\config.toml`）：
+把 [examples/grok.config.toml](../examples/grok.config.toml) 追加到 `%USERPROFILE%\.grok\config.toml`（或项目里的 `.grok\config.toml`）：
 
 ```toml
 [mcp_servers.vam]
@@ -169,7 +169,7 @@ Claude Code 会读 `AGENTS.md`。把本仓库当作项目打开即可。
 
 #### Cursor、Copilot 和其它 JSON 客户端
 
-格式与 [examples/claude_desktop.json](examples/claude_desktop.json)、[examples/grok.mcp.json](examples/grok.mcp.json) 相同：
+格式与 [examples/claude_desktop.json](../examples/claude_desktop.json)、[examples/grok.mcp.json](../examples/grok.mcp.json) 相同：
 
 ```json
 {
@@ -207,7 +207,7 @@ VAM 已开、插件已加载时：
 ## 日常怎么用
 
 1. **先开 VAM**，等到 Session Plugin 状态变成 `ready`。
-2. 在 **本仓库** 里启动 Agent，让它读到 [AGENTS.md](AGENTS.md)。
+2. 在 **本仓库** 里启动 Agent，让它读到 [AGENTS.md](../AGENTS.md)。
 3. 直接说话。Agent 应先 `list_*` 再 `load_*`；两个人加进当前房间并套成对姿势走 `setup_couple`。
 
 可以这样说：
@@ -282,4 +282,4 @@ Git 只提交源码。`.var` 放到 GitHub Release，不要提交进仓库，也
 
 ## 许可
 
-本仓库代码为 [MIT](LICENSE)。Virt-A-Mate 仍受其自己的 EULA 约束。
+本仓库代码为 [MIT](../LICENSE)。Virt-A-Mate 仍受其自己的 EULA 约束。
