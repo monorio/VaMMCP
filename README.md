@@ -20,7 +20,7 @@ Current pieces:
 ## How it works
 
 ```
-MCP client  →  vam-mcp (Python)  →  Saves/PluginData/vam-mcp/*.json  →  VamMcpBridge (session plugin)  →  SuperController
+MCP client  ->  vam-mcp (Python)  ->  Saves/PluginData/vam-mcp/*.json  ->  VamMcpBridge (session plugin)  ->  SuperController
 ```
 
 The bridge is a pair of local JSON files. Nothing is served on the network, and nothing talks HTTP inside Unity.
@@ -35,6 +35,19 @@ The bridge is a pair of local JSON files. Nothing is served on the network, and 
 
 `setup_couple` extra: a local package that still has paired F/M pose files (the server currently looks under `vamX.1.52:/Custom/Atom/Person/Pose/...`). Face aliases need the matching morphs on the Person. If those files are missing, the tool reports `missing` instead of inventing a face.
 
+## Tell the agent your VAM folder
+
+The agent can pack `VamMcp.Bridge.1.var` and copy it into `AddonPackages`. It **cannot guess** where VAM is installed.
+
+Before asking it to install, send the **full path of the folder that contains `VaM.exe`**. That folder is `VAM_ROOT`. Example shape (use your real path):
+
+```
+VAM_ROOT\VaM.exe
+VAM_ROOT\AddonPackages\
+```
+
+Do not omit the drive or folder names when you tell the agent. The agent must not invent a default path.
+
 ## Install (do these in order)
 
 You need **both** halves: the VAM plugin and the Python MCP server. The plugin must be a **Session Plugin**, not a Scene Plugin and not a plugin on a Person atom.
@@ -43,52 +56,40 @@ You need **both** halves: the VAM plugin and the Python MCP server. The plugin m
 
 1. Start VAM / VaMX.
 2. Open the main UI (`Esc`).
-3. **User Preferences → Security**.
+3. **User Preferences -> Security**.
 4. Turn **Enable Plugins** on.
-5. Recommended: turn **Plugins Always Enabled** on so VAM does not ask “allow this plugin?” every launch.
+5. Recommended: turn **Plugins Always Enabled** on so VAM does not ask "allow this plugin?" every launch.
 
 If you skip this, `Add Plugin` will either be missing or the script will sit there unused.
 
 ### 2. Install the VamMcpBridge plugin
 
-#### Option A — `.var` package (normal use)
+**Preferred:** tell the agent your `VAM_ROOT` (the folder with `VaM.exe`) and ask it to install the plugin. It should:
 
-1. Get `VamMcp.Bridge.N.var`:
-   - from [Releases](../../releases), or
-   - build one yourself with `.\scripts\pack-var.ps1 -Version 1` (writes `dist-var\VamMcp.Bridge.1.var`).
-2. Copy that file into the **`AddonPackages`** folder next to `VaM.exe`.
+1. Run `.\scripts\pack-var.ps1 -Version 1` in this repo (writes `dist-var\VamMcp.Bridge.1.var`).
+2. Copy that file to `VAM_ROOT\AddonPackages\VamMcp.Bridge.1.var`.
 
-   ```
-   <VAM_ROOT>\AddonPackages\VamMcp.Bridge.1.var
-   ```
+You can do the same by hand, or download `VamMcp.Bridge.N.var` from [Releases](https://github.com/monorio/VaMMCP/releases) and put it in `AddonPackages` yourself.
 
-3. If VAM was already running, **restart it** so it rescans packages.
+If VAM was already running, **restart it** so it rescans packages.
 
-#### Option B — development copy from this repo
-
-From a clone of this repository:
+**Development copy** (optional, from this repo):
 
 ```powershell
-.\scripts\install-dev.ps1 -VamRoot "C:\Path\To\Your\VAM"
+.\scripts\install-dev.ps1 -VamRoot "VAM_ROOT"
 ```
 
-That junctions (or copies) `plugin\` to:
+That junctions (or copies) `plugin\` to `VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs`. After you edit the `.cs` file, open **Session Plugins** and click **Reload** on `VamMcpBridge`.
 
-```
-<VAM_ROOT>\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs
-```
+### 3. Enable the plugin in the game (you must do this)
 
-After you edit the `.cs` file, open **Session Plugins** and click **Reload** on `VamMcpBridge`. A VAM restart is not required.
-
-### 3. Enable the plugin in the game
-
-Scene plugins are destroyed when a scene loads. This one **must** stay on **Session Plugins**.
+The agent cannot click the VAM UI. Scene plugins are destroyed when a scene loads. This one **must** stay on **Session Plugins**.
 
 1. Start VAM and open the main UI (`Esc`).
 2. Open the purple **Session Plugins** tab (main menu, not a Person atom).
 3. Click **Add Plugin**.
 4. In the file browser pick `VamMcpBridge.cs`:
-   - from a `.var`: package **`VamMcp.Bridge`** → `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`
+   - from a `.var`: package **`VamMcp.Bridge`** -> `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`
    - from a dev install: `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`
 5. If VAM asks to allow the plugin, choose **Allow**.
 6. Confirm the plugin row is present and:
@@ -96,7 +97,7 @@ Scene plugins are destroyed when a scene loads. This one **must** stay on **Sess
    - the status text says something like `ready  root=...`
 7. Keep it across restarts:
    - still on the Session Plugins panel, open **Session Plugin Presets**
-   - **Change User Defaults → Set Current As User Defaults**
+   - **Change User Defaults -> Set Current As User Defaults**
 
    If you skip it, the bridge is gone the next time you launch VAM.
 
@@ -104,42 +105,43 @@ Leave VAM running. The MCP server only works while this plugin is loaded and `en
 
 ### 4. Install the Python MCP server
 
+From the `mcp` folder in this repo:
+
 ```powershell
-cd C:\Path\To\VamMCP\mcp
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e .
 ```
 
-`VAM_ROOT` must be the folder that contains `VaM.exe`, for example `C:\VaM` or `E:\VaMX`.
+`VAM_ROOT` must be the folder that contains `VaM.exe` (the path you told the agent).
 
-With [uv](https://github.com/astral-sh/uv) you can skip the venv and run `uv --directory C:\Path\To\VamMCP\mcp run vam-mcp` instead.
+With [uv](https://github.com/astral-sh/uv) you can skip the venv and run `uv --directory mcp run vam-mcp` from the repo root.
 
 ### 5. Configure the agent / MCP client
 
-Replace the two paths. `command` is this repo’s venv Python; `VAM_ROOT` is the VAM/VaMX install. After saving, restart the agent or reload its MCP list.
+`command` is this repo's venv Python (`mcp\.venv\Scripts\python.exe`). `VAM_ROOT` is the folder that contains `VaM.exe`. After saving, restart the agent or reload its MCP list.
 
 Open **this repository** as the workspace so the agent auto-loads [AGENTS.md](AGENTS.md).
 
 #### Codex (CLI / IDE)
 
-Append [examples/codex.config.toml](examples/codex.config.toml) to `%USERPROFILE%\.codex\config.toml` (or a project `.codex\config.toml`):
+Append [examples/codex.config.toml](examples/codex.config.toml) to `%USERPROFILE%\.codex\config.toml` (or a project `.codex\config.toml`). Replace the two placeholders with your repo path and your `VAM_ROOT`:
 
 ```toml
 [mcp_servers.vam]
-command = 'C:\Path\To\VamMCP\mcp\.venv\Scripts\python.exe'
+command = 'REPO\mcp\.venv\Scripts\python.exe'
 args = ["-m", "vam_mcp.server"]
 
 [mcp_servers.vam.env]
-VAM_ROOT = 'C:\Path\To\Your\VAM'
+VAM_ROOT = 'VAM_ROOT'
 ```
 
 Or:
 
 ```powershell
-codex mcp add vam --env VAM_ROOT=C:\Path\To\Your\VAM -- C:\Path\To\VamMCP\mcp\.venv\Scripts\python.exe -m vam_mcp.server
+codex mcp add vam --env VAM_ROOT=VAM_ROOT -- REPO\mcp\.venv\Scripts\python.exe -m vam_mcp.server
 ```
 
-Then `cd` into this repo and start Codex. It reads `AGENTS.md` automatically.
+Then open this repo and start Codex. It reads `AGENTS.md` automatically.
 
 #### Grok
 
@@ -147,25 +149,25 @@ Append [examples/grok.config.toml](examples/grok.config.toml) to `%USERPROFILE%\
 
 ```toml
 [mcp_servers.vam]
-command = 'C:\Path\To\VamMCP\mcp\.venv\Scripts\python.exe'
+command = 'REPO\mcp\.venv\Scripts\python.exe'
 args = ["-m", "vam_mcp.server"]
 enabled = true
 startup_timeout_sec = 30
 tool_timeout_sec = 120
 
 [mcp_servers.vam.env]
-VAM_ROOT = 'C:\Path\To\Your\VAM'
+VAM_ROOT = 'VAM_ROOT'
 ```
 
-Or `grok mcp add vam -e VAM_ROOT=C:\Path\To\Your\VAM -- C:\Path\To\VamMCP\mcp\.venv\Scripts\python.exe -m vam_mcp.server`. In Grok run `/mcps` and press `r` to reload.
+Or `grok mcp add vam -e VAM_ROOT=VAM_ROOT -- REPO\mcp\.venv\Scripts\python.exe -m vam_mcp.server`. In Grok run `/mcps` and press `r` to reload.
 
 #### Claude Code
 
 ```powershell
-claude mcp add vam --env VAM_ROOT=C:\Path\To\Your\VAM -- C:\Path\To\VamMCP\mcp\.venv\Scripts\python.exe -m vam_mcp.server
+claude mcp add vam --env VAM_ROOT=VAM_ROOT -- REPO\mcp\.venv\Scripts\python.exe -m vam_mcp.server
 ```
 
-Claude Code also reads `AGENTS.md` (and `CLAUDE.md` if you add one that points here). Open this repo as the project.
+Open this repo as the project.
 
 #### Cursor, Copilot, and other JSON clients
 
@@ -175,9 +177,9 @@ Same shape as [examples/claude_desktop.json](examples/claude_desktop.json) / [ex
 {
   "mcpServers": {
     "vam": {
-      "command": "C:\\Path\\To\\VamMCP\\mcp\\.venv\\Scripts\\python.exe",
+      "command": "REPO\\mcp\\.venv\\Scripts\\python.exe",
       "args": ["-m", "vam_mcp.server"],
-      "env": { "VAM_ROOT": "C:\\Path\\To\\Your\\VAM" }
+      "env": { "VAM_ROOT": "VAM_ROOT" }
     }
   }
 }
@@ -188,7 +190,7 @@ Same shape as [examples/claude_desktop.json](examples/claude_desktop.json) / [ex
 | Codex | `%USERPROFILE%\.codex\config.toml` |
 | Grok | `%USERPROFILE%\.grok\config.toml` |
 | Claude Desktop | `%APPDATA%\Claude\claude_desktop_config.json` |
-| Cursor | `%USERPROFILE%\.cursor\mcp.json` or `<project>\.cursor\mcp.json` |
+| Cursor | `%USERPROFILE%\.cursor\mcp.json` or a project `.cursor\mcp.json` |
 | VS Code Copilot | MCP section in user/workspace `mcp.json` |
 | Any agent that reads `.mcp.json` | project root `.mcp.json` (same JSON as above) |
 
@@ -199,10 +201,10 @@ You should see a `vam` server with tools such as `status`, `list_scenes`, `setup
 With VAM running and `VamMcpBridge` loaded:
 
 ```powershell
-.\scripts\ping-bridge.ps1 -VamRoot "C:\Path\To\Your\VAM"
+.\scripts\ping-bridge.ps1 -VamRoot "VAM_ROOT"
 ```
 
-A JSON payload with `"ok": "true"` and `"plugin": "VamMcpBridge"` means the file bridge works. Then ask the agent to call `status`.
+A JSON payload with `"ok": "true"` and `"plugin": "VamMcpBridge"` means the file bridge works. Then ask the MCP client to call `status`.
 
 ## Daily use
 
@@ -212,15 +214,15 @@ A JSON payload with `"ok": "true"` and `"plugin": "VamMcpBridge"` means the file
 
 Examples:
 
-- “What people are in the current scene?”
-- “Search looks for this name and load that appearance.”
-- “Add these two people to the current room and sit them down.”
-- “Set her expression to smile.”
-- “Her head is tracking the camera — lock the head.”
+- "What people are in the current scene?"
+- "Search looks for this name and load that appearance."
+- "Add these two people to the current room and sit them down."
+- "Set her expression to smile."
+- "Her head is tracking the camera — lock the head."
 
 After any scene / look / pose change the server writes a screenshot to `Saves/PluginData/vam-mcp/preview.png`. Ask the agent to `capture_view` if you want to check the result.
 
-Typical tool flow: `list_*` → pick an exact `path` → `load_*`. Face changes use `set_expression` (plugin **0.5.0+**). Head tracking uses `lock_head` (plugin **0.5.1+**). After you update `VamMcpBridge.cs`, **Reload** the Session Plugin.
+Typical tool flow: `list_*` -> pick an exact `path` -> `load_*`. Face changes use `set_expression` (plugin **0.5.0+**). Head tracking uses `lock_head` (plugin **0.5.1+**). After you update `VamMcpBridge.cs`, **Reload** the Session Plugin.
 
 ## Tools
 
@@ -247,7 +249,7 @@ Do not ask the user to click **On** or delete atoms by hand — `set_person_on` 
 - `set_expression` only drives morphs that are already on the Person. Missing morphs show up in `missing`; the face will not change.
 - `lock_head` holds head/neck controllers and sets eyes to Target. A glance / look-at plugin on the Person can still turn the head — disable that plugin or lock again after it loads.
 - `add_person` starts a VAM coroutine and returns immediately. `setup_couple` waits about two seconds; a slow machine may need a retry.
-- `list_*` / `load_*` never create Hub content. If the look is not on disk, the answer is “not found”.
+- `list_*` / `load_*` never create Hub content. If the look is not on disk, the answer is "not found".
 
 ## Troubleshooting
 
@@ -255,14 +257,15 @@ Do not ask the user to click **On** or delete atoms by hand — `set_person_on` 
 | --- | --- |
 | `status` says plugin missing | VAM is not running, or the Session Plugin was never added / not set as user default |
 | MCP tool times out | Plugin `enabled` toggle is off; VAM is on a loading screen; or the plugin is a Scene Plugin and a scene load destroyed it |
-| `Add Plugin` does nothing | **User Preferences → Security → Enable Plugins** |
-| Plugin vanishes after restart | Session Plugin Presets → **Set Current As User Defaults** |
+| `Add Plugin` does nothing | **User Preferences -> Security -> Enable Plugins** |
+| Plugin vanishes after restart | Session Plugin Presets -> **Set Current As User Defaults** |
 | `VaM.exe not found` | `VAM_ROOT` is not the folder that contains `VaM.exe` |
 | `unknown op: set_expression` / `lock_head` | Old plugin. Update the `.cs` / `.var` and **Reload** the Session Plugin (need 0.5.0+ / 0.5.1+) |
 | New looks do not appear in `list_looks` | Restart the MCP server so it rescans `AddonPackages` |
 | `setup_couple` pose fails | Use `list_poses` / `load_pose`, or install the paired-pose package the server expects |
 | Ping script says no response | Same as timeout: VAM running, Session Plugin loaded, `enabled` on |
 | Agent ignores VAM tools | Workspace is not this repo (so `AGENTS.md` was not loaded), or the `vam` MCP server is not connected |
+| Agent asks for VAM_ROOT | Tell it the folder that contains `VaM.exe`. It will not guess. |
 
 ## Pack a `.var` for GitHub Releases
 
@@ -271,8 +274,6 @@ Do not ask the user to click **On** or delete atoms by hand — `set_person_on` 
 ```
 
 Commit source only. Attach `dist-var/VamMcp.Bridge.1.var` to the GitHub Release. Do not commit `.var` files, looks, scenes, or a VAM install.
-
-Before the first public push, change `creatorName` / repo URLs in `plugin/meta.json` to your GitHub account.
 
 ## Safety
 
@@ -298,21 +299,18 @@ Agent (Codex / Claude Code / Cursor / Grok / Copilot) 请先读 [AGENTS.md](AGEN
 
 当前版本：Session 插件 `VamMcpBridge` 0.5.1，Python 包 `vam-mcp` 0.2.0。
 
-### 原理
+### 先告诉 Agent 你的 VAM 目录
 
-MCP 客户端 -> vam-mcp (Python) -> Saves/PluginData/vam-mcp 下的 JSON -> VamMcpBridge (Session 插件) -> SuperController
+Agent 可以自动执行 `pack-var.ps1` 并把 `.var` 复制进 `AddonPackages`。它**不能猜** VAM 装在哪。
 
-走本地文件桥，不在 VAM 里开 HTTP，也不监听网络端口。
+让它安装之前，先发 **包含 `VaM.exe` 的那个文件夹的完整路径**。这个路径就是 `VAM_ROOT`：
 
-### 环境
+```
+VAM_ROOT\VaM.exe
+VAM_ROOT\AddonPackages\
+```
 
-- Windows
-- Virt-A-Mate 1.20+，或安装目录里有 VaM.exe 的 VaMX
-- Python 3.10+
-- 支持 MCP 的客户端：Codex、Claude Code、Cursor、Grok、Copilot 等
-- 本机 VAM 里已经有场景 / Look / 服装 / 姿势
-
-`setup_couple` 需要本机有成对的 F/M 姿势文件（目前查找 vamX.1.52 包里的 Pose）。表情别名需要角色身上已有对应 morph。缺文件时工具会列出 missing，不会凭空捏脸。
+路径要写全，不要省略盘符和目录名。Agent 不得自己编一个默认路径。
 
 ### 安装顺序
 
@@ -324,80 +322,80 @@ MCP 客户端 -> vam-mcp (Python) -> Saves/PluginData/vam-mcp 下的 JSON -> Vam
 2. 按 Esc 打开主界面
 3. User Preferences -> Security
 4. 打开 Enable Plugins
-5. 建议同时打开 Plugins Always Enabled，避免每次启动都弹是否允许插件
+5. 建议同时打开 Plugins Always Enabled
 
 这一步没开的话，后面 Add Plugin 会没有入口。
 
 #### 2. 安装 VamMcpBridge 插件
 
-日常安装用 var 包：
+**推荐：** 把 `VAM_ROOT`（含 `VaM.exe` 的文件夹）发给 Agent，让它安装插件。它应当：
 
-1. 从 [Releases](https://github.com/monorio/VaMMCP/releases) 下载 `VamMcp.Bridge.N.var`，或在本仓库执行 `scripts/pack-var.ps1 -Version 1`
-2. 复制到 VaM.exe 旁边的 AddonPackages 目录，例如 `E:\VaMX\AddonPackages\VamMcp.Bridge.1.var`
-3. 如果 VAM 当时是开着的，重启一次，让它重新扫描包
+1. 在本仓库执行 `.\scripts\pack-var.ps1 -Version 1`（生成 `dist-var\VamMcp.Bridge.1.var`）
+2. 把该文件复制到 `VAM_ROOT\AddonPackages\VamMcp.Bridge.1.var`
 
-开发安装：
+也可以自己从 [Releases](https://github.com/monorio/VaMMCP/releases) 下载 `.var` 放进 `AddonPackages`。
+
+如果 VAM 当时是开着的，重启一次，让它重新扫描包。
+
+开发安装（可选）：
 
 ```powershell
-.\scripts\install-dev.ps1 -VamRoot "E:\VaMX"
+.\scripts\install-dev.ps1 -VamRoot "VAM_ROOT"
 ```
 
-脚本会把 plugin 目录联接到 `Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs`。以后改了 cs 文件，在 Session Plugins 里对 VamMcpBridge 点 Reload 即可。
+脚本会把 plugin 联到 `VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs`。改完 cs 后在 Session Plugins 里对 VamMcpBridge 点 Reload。
 
-#### 3. 在游戏里启用插件
+#### 3. 在游戏里启用插件（必须人点）
+
+Agent 点不到 VAM 界面。
 
 1. 启动 VAM，按 Esc
 2. 打开主菜单上紫色的 Session Plugins（不要点到角色身上的 Plugins）
 3. 点 Add Plugin
 4. 选 VamMcpBridge.cs：var 安装走包名 VamMcp.Bridge；开发安装走 Custom/Scripts/VamMcp/Bridge
 5. 如果弹出是否允许，选 Allow
-6. 确认 enabled 开关是打开的，状态类似 ready
+6. 确认 enabled 打开，状态类似 ready
 7. Session Plugin Presets -> Change User Defaults -> Set Current As User Defaults
 
 不设默认的话，下次开 VAM 桥就没了。保持 VAM 开着，MCP 才能响应。
 
 #### 4. 安装 Python MCP 服务
 
+在本仓库的 `mcp` 目录：
+
 ```powershell
-cd E:\VamMCP\mcp
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e .
 ```
 
-VAM_ROOT 必须指向包含 VaM.exe 的目录，例如 E:\VaMX。
+`VAM_ROOT` 必须是你告诉 Agent 的、包含 `VaM.exe` 的那个目录。
 
 #### 5. 配置 Agent
 
-command 是本仓库 venv 里的 python.exe，VAM_ROOT 是 VAM 安装目录。改完后重启 Agent。请把本仓库当作工作区打开，这样会自动加载 AGENTS.md。
+`command` 是本仓库 venv 里的 `mcp\.venv\Scripts\python.exe`。`VAM_ROOT` 是包含 `VaM.exe` 的目录。改完后重启 Agent。请把本仓库当作工作区打开，这样会自动加载 AGENTS.md。
 
-Codex 写入 `%USERPROFILE%\.codex\config.toml`：
+Codex 写入 `%USERPROFILE%\.codex\config.toml`，把下面两个占位符换成你的仓库路径和 VAM 目录：
 
 ```toml
 [mcp_servers.vam]
-command = 'E:\VamMCP\mcp\.venv\Scripts\python.exe'
+command = 'REPO\mcp\.venv\Scripts\python.exe'
 args = ["-m", "vam_mcp.server"]
 
 [mcp_servers.vam.env]
-VAM_ROOT = 'E:\VaMX'
+VAM_ROOT = 'VAM_ROOT'
 ```
 
-也可以：
-
-```powershell
-codex mcp add vam --env VAM_ROOT=E:\VaMX -- E:\VamMCP\mcp\.venv\Scripts\python.exe -m vam_mcp.server
-```
-
-Grok 写入 `%USERPROFILE%\.grok\config.toml`，或执行 `grok mcp add vam ...`。Claude Code 用 `claude mcp add vam ...`。Cursor / Copilot 用标准 mcp.json，示例见 examples 目录。
+Grok 写入 `%USERPROFILE%\.grok\config.toml`。Claude Code 用 `claude mcp add vam ...`。Cursor / Copilot 用标准 mcp.json，示例见 examples 目录。
 
 #### 6. 连通测试
 
 VAM 已开、插件已加载时：
 
 ```powershell
-.\scripts\ping-bridge.ps1 -VamRoot "E:\VaMX"
+.\scripts\ping-bridge.ps1 -VamRoot "VAM_ROOT"
 ```
 
-返回 ok 和 plugin 为 VamMcpBridge 就说明文件桥通了。然后再让 Agent 调用一次 status。
+返回 ok 且 plugin 为 VamMcpBridge 就说明文件桥通了。然后再让 Agent 调用一次 status。
 
 ### 日常怎么用
 
@@ -405,38 +403,17 @@ VAM 已开、插件已加载时：
 2. 在本仓库里启动 Agent
 3. 直接说话。Agent 应先 list 再 load；两个人加进当前房间并套成对姿势走 setup_couple
 
-可以说：当前场景里有哪些人；搜这个名字的外观并加载；把这两个人加进当前房间并坐下；给她换成微笑；头跟着镜头转就锁住头。
-
-变更后预览图在 `Saves/PluginData/vam-mcp/preview.png`。需要核对结果时让 Agent 再调 capture_view。
-
-### 工具
-
-- status：插件是否在线
-- list_scenes / load_scene：搜或加载场景，merge=true 合并进当前场景
-- list_persons：当前场景里的人物
-- add_person / remove_person / set_person_on：加人、删人、显示或隐藏
-- capture_view：保存当前画面
-- list_looks / load_look：外观
-- list_clothing / load_clothing：服装
-- list_poses / load_pose：姿势，person=all 所有人一起换
-- list_expressions / set_expression：表情，例如 smile / neutral / surprise
-- lock_head：锁住头部
-- setup_couple：一次解析两个外观并套成对姿势
-
-不要让用户自己去点 On 或手动删 atom。
-
 ### 排错
 
+- Agent 问 VAM_ROOT：把包含 `VaM.exe` 的文件夹完整路径发给它
 - status 说插件不存在：VAM 没开，或 Session Plugin 没加 / 没设成用户默认
 - 工具超时：enabled 关了，或加到了 Scene Plugin
 - Add Plugin 没反应：先开 Enable Plugins
 - 重启后插件消失：Set Current As User Defaults
 - VaM.exe not found：VAM_ROOT 不是包含 VaM.exe 的目录
-- unknown op：插件太旧，更新后 Reload
-- 新 Look 看不到：重启 MCP 服务
 
 ### 安全
 
-只读写本机文件。工具能加载 VAM_ROOT 下可见的任意场景和预设。不要把这个 MCP 交给不信任的 Agent。
+只读写本机文件。不要把这个 MCP 交给不信任的 Agent。
 
 本仓库代码为 [MIT](LICENSE)。Virt-A-Mate 仍受其自己的 EULA 约束。
