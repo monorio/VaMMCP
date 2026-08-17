@@ -5,24 +5,53 @@ from typing import Any
 
 from mcp.server import MCPServer
 
+from pathlib import Path
+
 from . import __version__
 from . import bridge
 from .catalog import list_items
+from .couple import setup_couple as setup_couple_impl
+from .expression import list_expressions as list_expressions_impl
+from .expression import set_expression as set_expression_impl
+from .headlock import lock_head as lock_head_impl
+from .paths import vam_root
 
 mcp = MCPServer(
     name="vam-mcp",
     version=__version__,
     instructions=(
-        "Unofficial Virt-A-Mate controller. You can only load scenes, looks, and "
-        "clothing that already exist on the user's machine. Search first, then load "
-        "using the exact path returned by list_* tools. VAM must be running with "
-        "the VamMcpBridge session plugin loaded."
+        "Unofficial Virt-A-Mate controller. Read AGENTS.md in the VamMCP repo "
+        "and follow it. For two people plus a paired pose in the current scene, "
+        "call setup_couple(female, male, pose). "
+        "Do not ask the user to click On or delete atoms. "
+        "Looks/poses must already exist on disk. VamMcpBridge must be loaded. "
+        "For face changes use set_expression (smile/neutral/surprise/sad/angry "
+        "or a morph name from list_expressions). "
+        "If a head turns with the camera, call lock_head. "
+        "After any scene change, call capture_view and inspect the saved PNG."
     ),
 )
 
 
 def _dump(data: Any) -> str:
     return json.dumps(data, ensure_ascii=False, indent=2)
+
+
+def _preview_abs() -> str:
+    return str(vam_root() / "Saves" / "PluginData" / "vam-mcp" / "preview.png")
+
+
+def _capture_after(payload: Any) -> Any:
+    if not isinstance(payload, dict):
+        payload = {"data": payload}
+    try:
+        cap = bridge.call("capture_view", timeout=25.0)
+        payload["preview"] = cap.get("data") or cap
+        payload["previewAbsolute"] = _preview_abs()
+    except Exception as exc:
+        payload["previewError"] = str(exc)
+        payload["previewAbsolute"] = _preview_abs()
+    return payload
 
 
 @mcp.tool()
@@ -70,6 +99,41 @@ def list_clothing(query: str = "", limit: int = 25) -> str:
     )
 
 
+_POSE_ALIASES = {
+    "sit": "sitting",
+    "sitting": "sitting",
+    "seated": "seated",
+    "坐下": "sitting",
+    "坐着": "sitting",
+    "坐": "sitting",
+    "lie": "lying",
+    "lying": "lying",
+    "躺": "lying",
+    "躺下": "lying",
+    "stand": "standing",
+    "standing": "standing",
+    "站": "standing",
+    "站着": "standing",
+}
+
+
+def _pose_query(query: str) -> str:
+    key = query.strip().lower()
+    return _POSE_ALIASES.get(key, query)
+
+
+@mcp.tool()
+def list_poses(query: str = "", limit: int = 25) -> str:
+    """Search local pose presets (.vap). Use sit/sitting, lying, stand. For Chinese 坐下/躺/站 too."""
+    items = list_items("pose", query=_pose_query(query), limit=limit)
+    return _dump(
+        {
+            "count": len(items),
+            "items": [item.__dict__ for item in items],
+        }
+    )
+
+
 @mcp.tool()
 def list_persons() -> str:
     """List Person atoms in the currently loaded VAM scene."""
@@ -78,10 +142,31 @@ def list_persons() -> str:
 
 
 @mcp.tool()
+def remove_person(person: str) -> str:
+    """Delete a Person atom from the current scene. person is the atom uid from list_persons."""
+    result = bridge.call("remove_person", timeout=20.0, person=person)
+    return _dump(result.get("data") or result)
+
+
+@mcp.tool()
+def set_person_on(person: str, on: bool = True) -> str:
+    """Show or hide a Person atom. Use this to enable Person#2 or hide a broken one."""
+    result = bridge.call("set_person_on", timeout=10.0, person=person, on=on)
+    return _dump(result.get("data") or result)
+
+
+@mcp.tool()
+def add_person(uid: str = "MCPPerson") -> str:
+    """Add a new Person atom to the current scene. Then load_look / load_pose on the returned uid."""
+    result = bridge.call("add_person", timeout=20.0, uid=uid)
+    return _dump(result.get("data") or result)
+
+
+@mcp.tool()
 def load_scene(path: str, merge: bool = False) -> str:
     """Load a scene by the exact path from list_scenes. merge=True keeps the current scene and adds into it."""
     result = bridge.call("load_scene", timeout=90.0, path=path, merge=merge)
-    return _dump(result.get("data") or result)
+    return _dump(_capture_after(result.get("data") or result))
 
 
 @mcp.tool()
@@ -102,7 +187,7 @@ def load_look(path: str, person: str = "") -> str:
     if person:
         args["person"] = person
     result = bridge.call("load_look", timeout=45.0, **args)
-    return _dump(result.get("data") or result)
+    return _dump(_capture_after(result.get("data") or result))
 
 
 @mcp.tool()
@@ -112,7 +197,57 @@ def load_clothing(path: str, person: str = "") -> str:
     if person:
         args["person"] = person
     result = bridge.call("load_clothing", timeout=45.0, **args)
-    return _dump(result.get("data") or result)
+    return _dump(_capture_after(result.get("data") or result))
+
+
+@mcp.tool()
+def load_pose(path: str, person: str = "") -> str:
+    """Load a pose preset. person is an atom uid, empty for the first Person, or 'all' to pose everyone (两个人都坐下)."""
+    args: dict[str, Any] = {"path": path}
+    if person:
+        args["person"] = person
+    result = bridge.call("load_pose", timeout=45.0, **args)
+    return _dump(_capture_after(result.get("data") or result))
+
+
+@mcp.tool()
+def list_expressions(query: str = "", person: str = "") -> str:
+    """List facial-expression aliases and live expression morphs on a Person. query filters by name (ahegao, 吐舌, smile, …). person is an atom uid from list_persons; empty uses the first Person."""
+    return _dump(list_expressions_impl(query=query, person=person))
+
+
+@mcp.tool()
+def set_expression(name: str, person: str = "", value: float = 1.0, reset: bool = True) -> str:
+    """Set a facial expression. name is an alias (smile, neutral, surprise, sad, angry, …) or a morph name from list_expressions. Chinese aliases such as 笑 / 无表情 / 惊讶 also work. value is strength 0-1 (up to 2). reset=True clears other expression morphs first. Does not change clothes, hair, body pose, or face shape."""
+    return _dump(_capture_after(set_expression_impl(name=name, person=person, value=value, reset=reset)))
+
+
+@mcp.tool()
+def lock_head(person: str = "", locked: bool = True) -> str:
+    """Lock or unlock a Person head so it stops following the monitor camera. locked=True disables Glance/gaze look-at and holds head/neck. person is an atom uid from list_persons; empty uses the first Person."""
+    return _dump(_capture_after(lock_head_impl(person=person, locked=locked)))
+
+
+@mcp.tool()
+def setup_couple(female: str, male: str = "", pose: str = "doggy") -> str:
+    """One-shot: put a female and male look in the current scene and apply a paired pose.
+
+    female/male are look names or exact .vap paths.
+    pose is the user's pose name (or a name from list_poses). Enables hidden people
+    and adds a person if needed. Requires VamMcpBridge 0.3.0+.
+    """
+    return _dump(_capture_after(setup_couple_impl(female=female, male=male, pose=pose)))
+
+
+@mcp.tool()
+def capture_view() -> str:
+    """Capture the current VAM monitor camera to Saves/PluginData/vam-mcp/preview.png. Call after any pose/look/scene change and read that PNG."""
+    result = bridge.call("capture_view", timeout=25.0)
+    data = result.get("data") or {}
+    if not isinstance(data, dict):
+        data = {"data": data}
+    data["previewAbsolute"] = _preview_abs()
+    return _dump(data)
 
 
 def main() -> None:

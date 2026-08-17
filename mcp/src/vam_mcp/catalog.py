@@ -19,7 +19,7 @@ _CACHE: dict[str, list[CatalogItem]] | None = None
 
 
 def list_items(kind: str, query: str = "", limit: int = 25) -> list[CatalogItem]:
-    if kind not in {"scene", "look", "clothing"}:
+    if kind not in {"scene", "look", "clothing", "pose"}:
         raise ValueError(f"unknown kind: {kind}")
     q = query.strip().lower()
     items = _cached_scan(kind)
@@ -36,6 +36,7 @@ def _cached_scan(kind: str) -> list[CatalogItem]:
             "scene": _scan("scene"),
             "look": _scan("look"),
             "clothing": _scan("clothing"),
+            "pose": _scan("pose"),
         }
     return _CACHE[kind]
 
@@ -70,8 +71,11 @@ def _scan_loose(root: Path, kind: str) -> list[CatalogItem]:
             root / "Saves" / "Person" / "appearance",
         ]
         suffix = ".vap"
-    else:
+    elif kind == "clothing":
         roots = [root / "Custom" / "Atom" / "Person" / "Clothing"]
+        suffix = ".vap"
+    else:
+        roots = [root / "Custom" / "Atom" / "Person" / "Pose"]
         suffix = ".vap"
 
     for base in roots:
@@ -130,4 +134,6 @@ def _matches_kind(kind: str, inner: str, package_ref: str = "") -> bool:
         if lower.endswith(".json") and "/saves/scene/" in lower:
             return "look" in package or "look" in lower
         return False
-    return lower.endswith(".vap") and "/clothing/" in lower
+    if kind == "clothing":
+        return lower.endswith(".vap") and "/clothing/" in lower
+    return lower.endswith(".vap") and "/pose/" in lower
