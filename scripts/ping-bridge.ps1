@@ -16,7 +16,10 @@ $command = @{ id = $id; op = "ping" } | ConvertTo-Json -Compress
 $cmdPath = Join-Path $bridge "command.json"
 $resPath = Join-Path $bridge "result.json"
 if (Test-Path $resPath) { Remove-Item $resPath -Force }
-Set-Content -Path $cmdPath -Value $command -Encoding UTF8
+# Windows PowerShell 5 Set-Content -Encoding UTF8 writes a BOM;
+# SimpleJSON in VAM may reject that file.
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText($cmdPath, $command, $utf8NoBom)
 
 $deadline = (Get-Date).AddSeconds(10)
 while ((Get-Date) -lt $deadline) {
