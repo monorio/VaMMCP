@@ -1,10 +1,21 @@
 # VamMCP
 
-Unofficial [Model Context Protocol](https://modelcontextprotocol.io/) server plus a Virt-A-Mate **session plugin**. Talk to an MCP client and load scenes, looks, and clothing that already exist in your local VAM library.
+[English](README.md) | [中文](README.zh-CN.md)
 
-This project is **not affiliated with Mesh VR or Virt-A-Mate**. You must own a legal copy of VAM or VaMX. Adults only (18+). See [NOTICE.md](NOTICE.md).
+> **Agents (Codex, Claude Code, Cursor, Grok, Copilot, …):** read **[AGENTS.md](AGENTS.md)** first and follow it. Do not improvise a VAM workflow from this README.
+
+Unofficial [Model Context Protocol](https://modelcontextprotocol.io/) server plus a Virt-A-Mate **session plugin**. Talk to an MCP-capable agent and load scenes, looks, clothing, poses, and expressions that already exist in your local VAM library.
+
+This project is **not affiliated with Mesh VR or Virt-A-Mate**. You must own a legal copy of VAM or VaMX. See [NOTICE.md](NOTICE.md).
 
 **It does not generate characters or clothes.** It only searches and loads files already on disk.
+
+Current pieces:
+
+| Piece | Version |
+| --- | --- |
+| Session plugin `VamMcpBridge` | 0.5.1 |
+| Python package `vam-mcp` | 0.2.0 |
 
 ## How it works
 
@@ -12,44 +23,153 @@ This project is **not affiliated with Mesh VR or Virt-A-Mate**. You must own a l
 MCP client  →  vam-mcp (Python)  →  Saves/PluginData/vam-mcp/*.json  →  VamMcpBridge (session plugin)  →  SuperController
 ```
 
-The first version uses a local file bridge so it does not depend on HTTP inside Unity.
+The bridge is a pair of local JSON files. Nothing is served on the network, and nothing talks HTTP inside Unity.
 
-## Requirements
+## What you need
 
 - Windows
-- Virt-A-Mate 1.20+ or VaMX with `VaM.exe`
-- Python 3.10+ ([uv](https://github.com/astral-sh/uv) recommended)
-- An MCP client (Grok, Claude Desktop, Cursor, …)
+- Virt-A-Mate **1.20+** or VaMX whose install folder contains `VaM.exe`
+- Python **3.10+** ([uv](https://github.com/astral-sh/uv) is optional)
+- An MCP client / coding agent (Codex, Claude Code, Cursor, Grok, Copilot, …)
+- Looks / scenes / clothing / poses already in that VAM install
 
-## Install
+`setup_couple` extra: a local package that still has paired F/M pose files (the server currently looks under `vamX.1.52:/Custom/Atom/Person/Pose/...`). Face aliases need the matching morphs on the Person. If those files are missing, the tool reports `missing` instead of inventing a face.
 
-### 1. Plugin
+## Install (do these in order)
 
-**Release build:** copy `VamMcp.Bridge.N.var` from [Releases](../../releases) into `AddonPackages`.
+You need **both** halves: the VAM plugin and the Python MCP server. The plugin must be a **Session Plugin**, not a Scene Plugin and not a plugin on a Person atom.
 
-**Development:** from a clone of this repo:
+### 1. Allow plugins in VAM
+
+1. Start VAM / VaMX.
+2. Open the main UI (`Esc`).
+3. **User Preferences → Security**.
+4. Turn **Enable Plugins** on.
+5. Recommended: turn **Plugins Always Enabled** on so VAM does not ask “allow this plugin?” every launch.
+
+If you skip this, `Add Plugin` will either be missing or the script will sit there unused.
+
+### 2. Install the VamMcpBridge plugin
+
+#### Option A — `.var` package (normal use)
+
+1. Get `VamMcp.Bridge.N.var`:
+   - from [Releases](../../releases), or
+   - build one yourself with `.\scripts\pack-var.ps1 -Version 1` (writes `dist-var\VamMcp.Bridge.1.var`).
+2. Copy that file into the **`AddonPackages`** folder next to `VaM.exe`.
+
+   ```
+   <VAM_ROOT>\AddonPackages\VamMcp.Bridge.1.var
+   ```
+
+3. If VAM was already running, **restart it** so it rescans packages.
+
+#### Option B — development copy from this repo
+
+From a clone of this repository:
 
 ```powershell
 .\scripts\install-dev.ps1 -VamRoot "C:\Path\To\Your\VAM"
 ```
 
-Then in VAM:
+That junctions (or copies) `plugin\` to:
 
-1. Main UI → **Session Plugins** → Add Plugin → `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`
-2. Session Plugin Presets → set current as user default (so the bridge survives restarts)
-3. Leave VAM running
+```
+<VAM_ROOT>\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs
+```
 
-Scene plugins are destroyed on scene load. This one must stay on **Session Plugins**.
+After you edit the `.cs` file, open **Session Plugins** and click **Reload** on `VamMcpBridge`. A VAM restart is not required.
 
-### 2. MCP server
+### 3. Enable the plugin in the game
+
+Scene plugins are destroyed when a scene loads. This one **must** stay on **Session Plugins**.
+
+1. Start VAM and open the main UI (`Esc`).
+2. Open the purple **Session Plugins** tab (main menu, not a Person atom).
+3. Click **Add Plugin**.
+4. In the file browser pick `VamMcpBridge.cs`:
+   - from a `.var`: package **`VamMcp.Bridge`** → `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`
+   - from a dev install: `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`
+5. If VAM asks to allow the plugin, choose **Allow**.
+6. Confirm the plugin row is present and:
+   - the **`enabled`** toggle is on
+   - the status text says something like `ready  root=...`
+7. Keep it across restarts:
+   - still on the Session Plugins panel, open **Session Plugin Presets**
+   - **Change User Defaults → Set Current As User Defaults**
+
+   If you skip it, the bridge is gone the next time you launch VAM.
+
+Leave VAM running. The MCP server only works while this plugin is loaded and `enabled`.
+
+### 4. Install the Python MCP server
 
 ```powershell
-cd mcp
+cd C:\Path\To\VamMCP\mcp
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e .
 ```
 
-Point the client at the server and set `VAM_ROOT` to the folder that contains `VaM.exe`. See [examples/claude_desktop.json](examples/claude_desktop.json) and [examples/grok.mcp.json](examples/grok.mcp.json).
+`VAM_ROOT` must be the folder that contains `VaM.exe`, for example `C:\VaM` or `E:\VaMX`.
+
+With [uv](https://github.com/astral-sh/uv) you can skip the venv and run `uv --directory C:\Path\To\VamMCP\mcp run vam-mcp` instead.
+
+### 5. Configure the agent / MCP client
+
+Replace the two paths. `command` is this repo’s venv Python; `VAM_ROOT` is the VAM/VaMX install. After saving, restart the agent or reload its MCP list.
+
+Open **this repository** as the workspace so the agent auto-loads [AGENTS.md](AGENTS.md).
+
+#### Codex (CLI / IDE)
+
+Append [examples/codex.config.toml](examples/codex.config.toml) to `%USERPROFILE%\.codex\config.toml` (or a project `.codex\config.toml`):
+
+```toml
+[mcp_servers.vam]
+command = 'C:\Path\To\VamMCP\mcp\.venv\Scripts\python.exe'
+args = ["-m", "vam_mcp.server"]
+
+[mcp_servers.vam.env]
+VAM_ROOT = 'C:\Path\To\Your\VAM'
+```
+
+Or:
+
+```powershell
+codex mcp add vam --env VAM_ROOT=C:\Path\To\Your\VAM -- C:\Path\To\VamMCP\mcp\.venv\Scripts\python.exe -m vam_mcp.server
+```
+
+Then `cd` into this repo and start Codex. It reads `AGENTS.md` automatically.
+
+#### Grok
+
+Append [examples/grok.config.toml](examples/grok.config.toml) to `%USERPROFILE%\.grok\config.toml` (or a project `.grok\config.toml`):
+
+```toml
+[mcp_servers.vam]
+command = 'C:\Path\To\VamMCP\mcp\.venv\Scripts\python.exe'
+args = ["-m", "vam_mcp.server"]
+enabled = true
+startup_timeout_sec = 30
+tool_timeout_sec = 120
+
+[mcp_servers.vam.env]
+VAM_ROOT = 'C:\Path\To\Your\VAM'
+```
+
+Or `grok mcp add vam -e VAM_ROOT=C:\Path\To\Your\VAM -- C:\Path\To\VamMCP\mcp\.venv\Scripts\python.exe -m vam_mcp.server`. In Grok run `/mcps` and press `r` to reload.
+
+#### Claude Code
+
+```powershell
+claude mcp add vam --env VAM_ROOT=C:\Path\To\Your\VAM -- C:\Path\To\VamMCP\mcp\.venv\Scripts\python.exe -m vam_mcp.server
+```
+
+Claude Code also reads `AGENTS.md` (and `CLAUDE.md` if you add one that points here). Open this repo as the project.
+
+#### Cursor, Copilot, and other JSON clients
+
+Same shape as [examples/claude_desktop.json](examples/claude_desktop.json) / [examples/grok.mcp.json](examples/grok.mcp.json):
 
 ```json
 {
@@ -63,29 +183,88 @@ Point the client at the server and set `VAM_ROOT` to the folder that contains `V
 }
 ```
 
-With [uv](https://github.com/astral-sh/uv) you can use `uv --directory ... run vam-mcp` instead of the venv python.
+| Client | Config file |
+| --- | --- |
+| Codex | `%USERPROFILE%\.codex\config.toml` |
+| Grok | `%USERPROFILE%\.grok\config.toml` |
+| Claude Desktop | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Cursor | `%USERPROFILE%\.cursor\mcp.json` or `<project>\.cursor\mcp.json` |
+| VS Code Copilot | MCP section in user/workspace `mcp.json` |
+| Any agent that reads `.mcp.json` | project root `.mcp.json` (same JSON as above) |
 
-### 3. Smoke test
+You should see a `vam` server with tools such as `status`, `list_scenes`, `setup_couple`.
 
-With VAM running and the plugin loaded:
+### 6. Smoke test
+
+With VAM running and `VamMcpBridge` loaded:
 
 ```powershell
 .\scripts\ping-bridge.ps1 -VamRoot "C:\Path\To\Your\VAM"
 ```
 
+A JSON payload with `"ok": "true"` and `"plugin": "VamMcpBridge"` means the file bridge works. Then ask the agent to call `status`.
+
+## Daily use
+
+1. Start **VAM first**, wait until the Session Plugin status says `ready`.
+2. Start the agent **in this repo** so it sees [AGENTS.md](AGENTS.md).
+3. Talk in plain language. The agent should call `list_*` then `load_*` (or `setup_couple` for two people plus a paired pose).
+
+Examples:
+
+- “What people are in the current scene?”
+- “Search looks for this name and load that appearance.”
+- “Add these two people to the current room and sit them down.”
+- “Set her expression to smile.”
+- “Her head is tracking the camera — lock the head.”
+
+After any scene / look / pose change the server writes a screenshot to `Saves/PluginData/vam-mcp/preview.png`. Ask the agent to `capture_view` if you want to check the result.
+
+Typical tool flow: `list_*` → pick an exact `path` → `load_*`. Face changes use `set_expression` (plugin **0.5.0+**). Head tracking uses `lock_head` (plugin **0.5.1+**). After you update `VamMcpBridge.cs`, **Reload** the Session Plugin.
+
 ## Tools
 
 | Tool | Role |
 | --- | --- |
-| `status` | Is the plugin alive? |
-| `list_scenes` / `load_scene` | Search and load a scene |
+| `status` | Is `VAM_ROOT` valid and is the plugin alive? |
+| `list_scenes` / `load_scene` | Search and load a scene (`merge=true` adds into the current scene) |
 | `list_persons` | Person atoms in the current scene |
+| `add_person` / `remove_person` / `set_person_on` | Add, delete, or show/hide a Person |
+| `capture_view` | Save the monitor camera to `Saves/PluginData/vam-mcp/preview.png` |
 | `list_looks` / `load_look` | Search and apply an appearance preset |
 | `list_clothing` / `load_clothing` | Search and apply a clothing preset |
+| `list_poses` / `load_pose` | Search and apply a pose (`person=all` poses everyone) |
+| `list_expressions` / `set_expression` | List aliases / live face morphs, then set a face (`smile`, `neutral`, `surprise`, …) |
+| `lock_head` | Hold the head still so it does not follow the monitor camera |
+| `setup_couple` | One-shot: resolve two looks, enable or add people, apply a paired pose |
 
-Typical chat flow: search (`list_*`) → pick an exact `path` → `load_*`.
+Do not ask the user to click **On** or delete atoms by hand — `set_person_on` / `remove_person` do that.
 
-## Pack a .var for GitHub Releases
+## Known limits
+
+- Scene catalog is cached for the life of the MCP process. After you drop new `.var` files or looks into VAM, restart the MCP server so `list_*` sees them.
+- `setup_couple` paired-pose paths currently assume **vamX 1.52**. A different package version will fail those `load_pose` calls unless that exact package is still installed.
+- `set_expression` only drives morphs that are already on the Person. Missing morphs show up in `missing`; the face will not change.
+- `lock_head` holds head/neck controllers and sets eyes to Target. A glance / look-at plugin on the Person can still turn the head — disable that plugin or lock again after it loads.
+- `add_person` starts a VAM coroutine and returns immediately. `setup_couple` waits about two seconds; a slow machine may need a retry.
+- `list_*` / `load_*` never create Hub content. If the look is not on disk, the answer is “not found”.
+
+## Troubleshooting
+
+| Symptom | What to check |
+| --- | --- |
+| `status` says plugin missing | VAM is not running, or the Session Plugin was never added / not set as user default |
+| MCP tool times out | Plugin `enabled` toggle is off; VAM is on a loading screen; or the plugin is a Scene Plugin and a scene load destroyed it |
+| `Add Plugin` does nothing | **User Preferences → Security → Enable Plugins** |
+| Plugin vanishes after restart | Session Plugin Presets → **Set Current As User Defaults** |
+| `VaM.exe not found` | `VAM_ROOT` is not the folder that contains `VaM.exe` |
+| `unknown op: set_expression` / `lock_head` | Old plugin. Update the `.cs` / `.var` and **Reload** the Session Plugin (need 0.5.0+ / 0.5.1+) |
+| New looks do not appear in `list_looks` | Restart the MCP server so it rescans `AddonPackages` |
+| `setup_couple` pose fails | Use `list_poses` / `load_pose`, or install the paired-pose package the server expects |
+| Ping script says no response | Same as timeout: VAM running, Session Plugin loaded, `enabled` on |
+| Agent ignores VAM tools | Workspace is not this repo (so `AGENTS.md` was not loaded), or the `vam` MCP server is not connected |
+
+## Pack a `.var` for GitHub Releases
 
 ```powershell
 .\scripts\pack-var.ps1 -Version 1

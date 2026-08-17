@@ -1,0 +1,10 @@
+# OpenAI Codex CLI / IDE. Copy the [mcp_servers.vam] block into
+# %USERPROFILE%\.codex\config.toml (or a project .codex/config.toml).
+# Replace both paths. VAM_ROOT must be the folder that contains VaM.exe.
+
+[mcp_servers.vam]
+command = 'C:\Path\To\VamMCP\mcp\.venv\Scripts\python.exe'
+args = ["-m", "vam_mcp.server"]
+
+[mcp_servers.vam.env]
+VAM_ROOT = 'C:\Path\To\Your\VAM'

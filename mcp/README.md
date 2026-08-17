@@ -1,11 +1,19 @@
 # vam-mcp (Python package)
 
-Unofficial MCP server for Virt-A-Mate. See the repository root README for install
-and safety notes.
+Unofficial MCP server for Virt-A-Mate.
+
+Install and client config (Codex, Claude Code, Cursor, Grok, Copilot) are in
+the repository root. Agents should follow [AGENTS.md](../AGENTS.md):
+
+- [README.md](../README.md) (English)
+- [README.zh-CN.md](../README.zh-CN.md) (中文)
 
 ```bash
 # from this directory
-uv run vam-mcp
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e .
+# or: uv run vam-mcp
 ```
 
-Set `VAM_ROOT` to the folder that contains `VaM.exe`.
+Set `VAM_ROOT` to the folder that contains `VaM.exe`. Keep VAM running with
+`VamMcpBridge` loaded as a **Session Plugin**.

@@ -1,14 +1,15 @@
 {
   "mcpServers": {
     "vam": {
-      "command": "E:\\VamMCP\\mcp\\.venv\\Scripts\\python.exe",
+      "command": "C:\\Path\\To\\VamMCP\\mcp\\.venv\\Scripts\\python.exe",
       "args": [
         "-m",
         "vam_mcp.server"
       ],
       "env": {
-        "VAM_ROOT": "E:\\VaMX"
+        "VAM_ROOT": "C:\\Path\\To\\Your\\VAM"
       }
     }
   }
 }
+
