@@ -3,9 +3,9 @@
    "creatorName" : "VamMcp",
    "packageName" : "Bridge",
    "includeVersionsInReferences" : "true",
-   "description" : "v0.1.0 Session plugin bridge for the unofficial VamMCP server. Load as a Session Plugin so it survives scene changes.",
+   "description" : "v0.5.1 Session plugin bridge for the unofficial VamMCP server. Load as a Session Plugin so it survives scene changes. Supports scene/look/clothing/pose, facial expressions, and lock_head.",
    "credits" : "Unofficial community project. Not affiliated with Mesh VR / Virt-A-Mate.",
-   "instructions" : "1. Put this .var in AddonPackages (or use the loose Custom/Scripts copy for development).\n2. Main UI -> Session Plugins -> Add Plugin -> VamMcp.Bridge -> VamMcpBridge.cs\n3. Session Plugin Presets -> set current as user default so it loads on startup.\n4. Run the vam-mcp Python server with VAM_ROOT pointed at this install.\n5. Keep VAM running. The plugin polls Saves/PluginData/vam-mcp/command.json",
+   "instructions" : "1. User Preferences -> Security -> Enable Plugins (recommended: Plugins Always Enabled).\n2. Put this .var in AddonPackages (or use the loose Custom/Scripts copy for development) and restart VAM.\n3. Main UI (Esc) -> Session Plugins -> Add Plugin -> VamMcp.Bridge -> VamMcpBridge.cs. Leave enabled on.\n4. Session Plugin Presets -> Change User Defaults -> Set Current As User Defaults.\n5. Run the vam-mcp Python server with VAM_ROOT pointed at this install.\n6. Keep VAM running. The plugin polls Saves/PluginData/vam-mcp/command.json",
    "promotionalLink" : "https://github.com/VamMcp/vam-mcp",
    "programVersion" : "1.20.0.0",
    "contentList" : [
