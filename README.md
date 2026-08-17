@@ -1,6 +1,6 @@
 # VamMCP
 
-[English](README.md) | [中文](docs/zh.md)
+[English](#vammcp) | [中文](#中文)
 
 > **Agents (Codex, Claude Code, Cursor, Grok, Copilot, …):** read **[AGENTS.md](AGENTS.md)** first and follow it. Do not improvise a VAM workflow from this README.
 
@@ -283,3 +283,160 @@ Before the first public push, change `creatorName` / repo URLs in `plugin/meta.j
 ## License
 
 [MIT](LICENSE) for the code in this repository. Virt-A-Mate remains under its own EULA.
+
+---
+
+## 中文
+
+Agent (Codex / Claude Code / Cursor / Grok / Copilot) 请先读 [AGENTS.md](AGENTS.md)，再动手。
+
+非官方 [MCP](https://modelcontextprotocol.io/) 服务 + Virt-A-Mate Session 插件。用对话加载本机已经有的场景、Look、服装、姿势和表情。
+
+和 Mesh VR / Virt-A-Mate 没有隶属关系。需要自己拥有合法的 VAM 或 VaMX。详见 [NOTICE.md](NOTICE.md)。
+
+不能生成角色或衣服，只能搜索并加载硬盘上已有的文件。
+
+当前版本：Session 插件 `VamMcpBridge` 0.5.1，Python 包 `vam-mcp` 0.2.0。
+
+### 原理
+
+MCP 客户端 -> vam-mcp (Python) -> Saves/PluginData/vam-mcp 下的 JSON -> VamMcpBridge (Session 插件) -> SuperController
+
+走本地文件桥，不在 VAM 里开 HTTP，也不监听网络端口。
+
+### 环境
+
+- Windows
+- Virt-A-Mate 1.20+，或安装目录里有 VaM.exe 的 VaMX
+- Python 3.10+
+- 支持 MCP 的客户端：Codex、Claude Code、Cursor、Grok、Copilot 等
+- 本机 VAM 里已经有场景 / Look / 服装 / 姿势
+
+`setup_couple` 需要本机有成对的 F/M 姿势文件（目前查找 vamX.1.52 包里的 Pose）。表情别名需要角色身上已有对应 morph。缺文件时工具会列出 missing，不会凭空捏脸。
+
+### 安装顺序
+
+两边都要装：VAM 插件，以及 Python MCP 服务。插件必须加在 Session Plugins，不要加到 Scene Plugins，也不要加在某个 Person 身上。
+
+#### 1. 先在 VAM 里允许插件
+
+1. 启动 VAM / VaMX
+2. 按 Esc 打开主界面
+3. User Preferences -> Security
+4. 打开 Enable Plugins
+5. 建议同时打开 Plugins Always Enabled，避免每次启动都弹是否允许插件
+
+这一步没开的话，后面 Add Plugin 会没有入口。
+
+#### 2. 安装 VamMcpBridge 插件
+
+日常安装用 var 包：
+
+1. 从 [Releases](https://github.com/monorio/VaMMCP/releases) 下载 `VamMcp.Bridge.N.var`，或在本仓库执行 `scripts/pack-var.ps1 -Version 1`
+2. 复制到 VaM.exe 旁边的 AddonPackages 目录，例如 `E:\VaMX\AddonPackages\VamMcp.Bridge.1.var`
+3. 如果 VAM 当时是开着的，重启一次，让它重新扫描包
+
+开发安装：
+
+```powershell
+.\scripts\install-dev.ps1 -VamRoot "E:\VaMX"
+```
+
+脚本会把 plugin 目录联接到 `Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs`。以后改了 cs 文件，在 Session Plugins 里对 VamMcpBridge 点 Reload 即可。
+
+#### 3. 在游戏里启用插件
+
+1. 启动 VAM，按 Esc
+2. 打开主菜单上紫色的 Session Plugins（不要点到角色身上的 Plugins）
+3. 点 Add Plugin
+4. 选 VamMcpBridge.cs：var 安装走包名 VamMcp.Bridge；开发安装走 Custom/Scripts/VamMcp/Bridge
+5. 如果弹出是否允许，选 Allow
+6. 确认 enabled 开关是打开的，状态类似 ready
+7. Session Plugin Presets -> Change User Defaults -> Set Current As User Defaults
+
+不设默认的话，下次开 VAM 桥就没了。保持 VAM 开着，MCP 才能响应。
+
+#### 4. 安装 Python MCP 服务
+
+```powershell
+cd E:\VamMCP\mcp
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e .
+```
+
+VAM_ROOT 必须指向包含 VaM.exe 的目录，例如 E:\VaMX。
+
+#### 5. 配置 Agent
+
+command 是本仓库 venv 里的 python.exe，VAM_ROOT 是 VAM 安装目录。改完后重启 Agent。请把本仓库当作工作区打开，这样会自动加载 AGENTS.md。
+
+Codex 写入 `%USERPROFILE%\.codex\config.toml`：
+
+```toml
+[mcp_servers.vam]
+command = 'E:\VamMCP\mcp\.venv\Scripts\python.exe'
+args = ["-m", "vam_mcp.server"]
+
+[mcp_servers.vam.env]
+VAM_ROOT = 'E:\VaMX'
+```
+
+也可以：
+
+```powershell
+codex mcp add vam --env VAM_ROOT=E:\VaMX -- E:\VamMCP\mcp\.venv\Scripts\python.exe -m vam_mcp.server
+```
+
+Grok 写入 `%USERPROFILE%\.grok\config.toml`，或执行 `grok mcp add vam ...`。Claude Code 用 `claude mcp add vam ...`。Cursor / Copilot 用标准 mcp.json，示例见 examples 目录。
+
+#### 6. 连通测试
+
+VAM 已开、插件已加载时：
+
+```powershell
+.\scripts\ping-bridge.ps1 -VamRoot "E:\VaMX"
+```
+
+返回 ok 和 plugin 为 VamMcpBridge 就说明文件桥通了。然后再让 Agent 调用一次 status。
+
+### 日常怎么用
+
+1. 先开 VAM，等到 Session Plugin 状态变成 ready
+2. 在本仓库里启动 Agent
+3. 直接说话。Agent 应先 list 再 load；两个人加进当前房间并套成对姿势走 setup_couple
+
+可以说：当前场景里有哪些人；搜这个名字的外观并加载；把这两个人加进当前房间并坐下；给她换成微笑；头跟着镜头转就锁住头。
+
+变更后预览图在 `Saves/PluginData/vam-mcp/preview.png`。需要核对结果时让 Agent 再调 capture_view。
+
+### 工具
+
+- status：插件是否在线
+- list_scenes / load_scene：搜或加载场景，merge=true 合并进当前场景
+- list_persons：当前场景里的人物
+- add_person / remove_person / set_person_on：加人、删人、显示或隐藏
+- capture_view：保存当前画面
+- list_looks / load_look：外观
+- list_clothing / load_clothing：服装
+- list_poses / load_pose：姿势，person=all 所有人一起换
+- list_expressions / set_expression：表情，例如 smile / neutral / surprise
+- lock_head：锁住头部
+- setup_couple：一次解析两个外观并套成对姿势
+
+不要让用户自己去点 On 或手动删 atom。
+
+### 排错
+
+- status 说插件不存在：VAM 没开，或 Session Plugin 没加 / 没设成用户默认
+- 工具超时：enabled 关了，或加到了 Scene Plugin
+- Add Plugin 没反应：先开 Enable Plugins
+- 重启后插件消失：Set Current As User Defaults
+- VaM.exe not found：VAM_ROOT 不是包含 VaM.exe 的目录
+- unknown op：插件太旧，更新后 Reload
+- 新 Look 看不到：重启 MCP 服务
+
+### 安全
+
+只读写本机文件。工具能加载 VAM_ROOT 下可见的任意场景和预设。不要把这个 MCP 交给不信任的 Agent。
+
+本仓库代码为 [MIT](LICENSE)。Virt-A-Mate 仍受其自己的 EULA 约束。
