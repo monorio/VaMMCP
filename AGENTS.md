@@ -1,6 +1,6 @@
 # AGENTS.md
 
-If you are an agent (Codex, Claude Code, Cursor, Grok, Copilot, Cline, …), **read this file first and follow it**. Humans install and configure the stack with [README.md](README.md) / [README.zh-CN.md](README.zh-CN.md).
+If you are an agent (Codex, Claude Code, Cursor, Grok, Copilot, Cline, …), **read this file first and follow it**. Humans install and configure the stack with [README.md](README.md) / [README_zh-CN.md](README_zh-CN.md).
 
 你是 Agent 时：**先读本文件再动手**。人类安装步骤见 README。
 

@@ -1,6 +1,6 @@
 # VamMCP
 
-[English](README.md) | [中文](README.zh-CN.md)
+[English](README.md) | [中文](README_zh-CN.md)
 
 > **Agent（Codex、Claude Code、Cursor、Grok、Copilot 等）：先读 [AGENTS.md](AGENTS.md) 并按它操作。** 不要只凭本 README 自己猜 VAM 流程。
 
