@@ -1,12 +1,12 @@
 # VamMCP
 
-[English](#vammcp) | [中文](#中文)
+[English](#vammcp) | [中文说明](docs/zh-CN.md) ([源码视图](docs/zh-CN.md?plain=1))
 
-> **Agents (Codex, Claude Code, Cursor, Grok, Copilot, …):** read **[AGENTS.md](AGENTS.md)** first and follow it. Do not improvise a VAM workflow from this README.
+> **Agents (Codex, Claude Code, Cursor, Grok, Copilot, …):** read **[AGENTS.md](AGENTS.md?plain=1)** first and follow it. Do not improvise a VAM workflow from this README.
 
 Unofficial [Model Context Protocol](https://modelcontextprotocol.io/) server plus a Virt-A-Mate **session plugin**. Talk to an MCP-capable agent and load scenes, looks, clothing, poses, and expressions that already exist in your local VAM library.
 
-This project is **not affiliated with Mesh VR or Virt-A-Mate**. You must own a legal copy of VAM or VaMX. See [NOTICE.md](NOTICE.md).
+This project is **not affiliated with Mesh VR or Virt-A-Mate**. You must own a legal copy of VAM or VaMX. See [NOTICE.md](NOTICE.md?plain=1).
 
 **It does not generate characters or clothes.** It only searches and loads files already on disk.
 
@@ -120,7 +120,7 @@ With [uv](https://github.com/astral-sh/uv) you can skip the venv and run `uv --d
 
 `command` is this repo's venv Python (`mcp\.venv\Scripts\python.exe`). `VAM_ROOT` is the folder that contains `VaM.exe`. After saving, restart the agent or reload its MCP list.
 
-Open **this repository** as the workspace so the agent auto-loads [AGENTS.md](AGENTS.md).
+Open **this repository** as the workspace so the agent auto-loads [AGENTS.md](AGENTS.md?plain=1).
 
 #### Codex (CLI / IDE)
 
@@ -284,136 +284,3 @@ Commit source only. Attach `dist-var/VamMcp.Bridge.1.var` to the GitHub Release.
 ## License
 
 [MIT](LICENSE) for the code in this repository. Virt-A-Mate remains under its own EULA.
-
----
-
-## 中文
-
-Agent (Codex / Claude Code / Cursor / Grok / Copilot) 请先读 [AGENTS.md](AGENTS.md)，再动手。
-
-非官方 [MCP](https://modelcontextprotocol.io/) 服务 + Virt-A-Mate Session 插件。用对话加载本机已经有的场景、Look、服装、姿势和表情。
-
-和 Mesh VR / Virt-A-Mate 没有隶属关系。需要自己拥有合法的 VAM 或 VaMX。详见 [NOTICE.md](NOTICE.md)。
-
-不能生成角色或衣服，只能搜索并加载硬盘上已有的文件。
-
-当前版本：Session 插件 `VamMcpBridge` 0.5.1，Python 包 `vam-mcp` 0.2.0。
-
-### 先告诉 Agent 你的 VAM 目录
-
-Agent 可以自动执行 `pack-var.ps1` 并把 `.var` 复制进 `AddonPackages`。它**不能猜** VAM 装在哪。
-
-让它安装之前，先发 **包含 `VaM.exe` 的那个文件夹的完整路径**。这个路径就是 `VAM_ROOT`：
-
-```
-VAM_ROOT\VaM.exe
-VAM_ROOT\AddonPackages\
-```
-
-路径要写全，不要省略盘符和目录名。Agent 不得自己编一个默认路径。
-
-### 安装顺序
-
-两边都要装：VAM 插件，以及 Python MCP 服务。插件必须加在 Session Plugins，不要加到 Scene Plugins，也不要加在某个 Person 身上。
-
-#### 1. 先在 VAM 里允许插件
-
-1. 启动 VAM / VaMX
-2. 按 Esc 打开主界面
-3. User Preferences -> Security
-4. 打开 Enable Plugins
-5. 建议同时打开 Plugins Always Enabled
-
-这一步没开的话，后面 Add Plugin 会没有入口。
-
-#### 2. 安装 VamMcpBridge 插件
-
-**推荐：** 把 `VAM_ROOT`（含 `VaM.exe` 的文件夹）发给 Agent，让它安装插件。它应当：
-
-1. 在本仓库执行 `.\scripts\pack-var.ps1 -Version 1`（生成 `dist-var\VamMcp.Bridge.1.var`）
-2. 把该文件复制到 `VAM_ROOT\AddonPackages\VamMcp.Bridge.1.var`
-
-也可以自己从 [Releases](https://github.com/monorio/VaMMCP/releases) 下载 `.var` 放进 `AddonPackages`。
-
-如果 VAM 当时是开着的，重启一次，让它重新扫描包。
-
-开发安装（可选）：
-
-```powershell
-.\scripts\install-dev.ps1 -VamRoot "VAM_ROOT"
-```
-
-脚本会把 plugin 联到 `VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs`。改完 cs 后在 Session Plugins 里对 VamMcpBridge 点 Reload。
-
-#### 3. 在游戏里启用插件（必须人点）
-
-Agent 点不到 VAM 界面。
-
-1. 启动 VAM，按 Esc
-2. 打开主菜单上紫色的 Session Plugins（不要点到角色身上的 Plugins）
-3. 点 Add Plugin
-4. 选 VamMcpBridge.cs：var 安装走包名 VamMcp.Bridge；开发安装走 Custom/Scripts/VamMcp/Bridge
-5. 如果弹出是否允许，选 Allow
-6. 确认 enabled 打开，状态类似 ready
-7. Session Plugin Presets -> Change User Defaults -> Set Current As User Defaults
-
-不设默认的话，下次开 VAM 桥就没了。保持 VAM 开着，MCP 才能响应。
-
-#### 4. 安装 Python MCP 服务
-
-在本仓库的 `mcp` 目录：
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e .
-```
-
-`VAM_ROOT` 必须是你告诉 Agent 的、包含 `VaM.exe` 的那个目录。
-
-#### 5. 配置 Agent
-
-`command` 是本仓库 venv 里的 `mcp\.venv\Scripts\python.exe`。`VAM_ROOT` 是包含 `VaM.exe` 的目录。改完后重启 Agent。请把本仓库当作工作区打开，这样会自动加载 AGENTS.md。
-
-Codex 写入 `%USERPROFILE%\.codex\config.toml`，把下面两个占位符换成你的仓库路径和 VAM 目录：
-
-```toml
-[mcp_servers.vam]
-command = 'REPO\mcp\.venv\Scripts\python.exe'
-args = ["-m", "vam_mcp.server"]
-
-[mcp_servers.vam.env]
-VAM_ROOT = 'VAM_ROOT'
-```
-
-Grok 写入 `%USERPROFILE%\.grok\config.toml`。Claude Code 用 `claude mcp add vam ...`。Cursor / Copilot 用标准 mcp.json，示例见 examples 目录。
-
-#### 6. 连通测试
-
-VAM 已开、插件已加载时：
-
-```powershell
-.\scripts\ping-bridge.ps1 -VamRoot "VAM_ROOT"
-```
-
-返回 ok 且 plugin 为 VamMcpBridge 就说明文件桥通了。然后再让 Agent 调用一次 status。
-
-### 日常怎么用
-
-1. 先开 VAM，等到 Session Plugin 状态变成 ready
-2. 在本仓库里启动 Agent
-3. 直接说话。Agent 应先 list 再 load；两个人加进当前房间并套成对姿势走 setup_couple
-
-### 排错
-
-- Agent 问 VAM_ROOT：把包含 `VaM.exe` 的文件夹完整路径发给它
-- status 说插件不存在：VAM 没开，或 Session Plugin 没加 / 没设成用户默认
-- 工具超时：enabled 关了，或加到了 Scene Plugin
-- Add Plugin 没反应：先开 Enable Plugins
-- 重启后插件消失：Set Current As User Defaults
-- VaM.exe not found：VAM_ROOT 不是包含 VaM.exe 的目录
-
-### 安全
-
-只读写本机文件。不要把这个 MCP 交给不信任的 Agent。
-
-本仓库代码为 [MIT](LICENSE)。Virt-A-Mate 仍受其自己的 EULA 约束。

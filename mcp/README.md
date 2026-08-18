@@ -3,9 +3,10 @@
 Unofficial MCP server for Virt-A-Mate.
 
 Install and client config (Codex, Claude Code, Cursor, Grok, Copilot) are in
-the repository root. Agents should follow [AGENTS.md](../AGENTS.md):
+the repository root. Agents should follow [AGENTS.md](../AGENTS.md?plain=1):
 
-- [README.md](../README.md) (English / 中文)
+- [README.md](../README.md) (English)
+- [中文说明](../docs/zh-CN.md)
 
 ```bash
 # from this directory
