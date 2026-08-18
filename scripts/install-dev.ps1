@@ -1,4 +1,5 @@
-# Link the plugin source into a local VAM/VaMX install for development.
+# Install the plugin source into a local VAM/VaMX install at the canonical
+# loose-script path. Creates a junction when possible and copies otherwise.
 # Usage:
 #   .\scripts\install-dev.ps1
 #   .\scripts\install-dev.ps1 -VamRoot "E:\VaMX"
@@ -10,7 +11,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 if (-not $VamRoot) {
-    $VamRoot = "E:\VaMX"
+    throw "VAM_ROOT is required. Pass -VamRoot with the folder that contains VaM.exe."
 }
 
 $VamRoot = [System.IO.Path]::GetFullPath($VamRoot)
@@ -29,15 +30,22 @@ New-Item -ItemType Directory -Force -Path $destParent | Out-Null
 if (Test-Path $dest) {
     $item = Get-Item $dest -Force
     if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
-        cmd /c rmdir "$dest"
+        [System.IO.Directory]::Delete($dest, $false)
     }
     else {
-        Remove-Item $dest -Recurse -Force
+        Copy-Item (Join-Path $src "VamMcpBridge.cs") (Join-Path $dest "VamMcpBridge.cs") -Force
+        Copy-Item (Join-Path $src "meta.json") (Join-Path $dest "meta.json") -Force
+        Write-Host "Plugin copied to: $dest\VamMcpBridge.cs"
+        Write-Host "In VAM: Main UI -> Session Plugins -> Add Plugin -> Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs"
+        Write-Host "Then Session Plugin Presets -> set current as user default."
+        exit 0
     }
 }
 
-cmd /c mklink /J "$dest" "$src" | Out-Null
-if ($LASTEXITCODE -ne 0) {
+try {
+    New-Item -ItemType Junction -Path $dest -Target $src -ErrorAction Stop | Out-Null
+}
+catch {
     Write-Host "Junction failed; copying files instead."
     New-Item -ItemType Directory -Force -Path $dest | Out-Null
     Copy-Item (Join-Path $src "VamMcpBridge.cs") (Join-Path $dest "VamMcpBridge.cs") -Force
@@ -45,5 +53,5 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Plugin available at: $dest\VamMcpBridge.cs"
-Write-Host "In VAM: Main UI -> Session Plugins -> Add Plugin -> that file."
+Write-Host "In VAM: Main UI -> Session Plugins -> Add Plugin -> Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs"
 Write-Host "Then Session Plugin Presets -> set current as user default."

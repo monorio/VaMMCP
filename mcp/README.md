@@ -16,4 +16,5 @@ python -m venv .venv
 ```
 
 Set `VAM_ROOT` to the folder that contains `VaM.exe`. Keep VAM running with
-`VamMcpBridge` loaded as a **Session Plugin**.
+`VamMcpBridge` loaded as a **Session Plugin** from the loose path
+`VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs`.

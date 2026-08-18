@@ -19,29 +19,36 @@ It **only** searches and loads files already on the user's disk (scenes, looks, 
 
 ## Install steps the agent should run
 
-When the plugin is not in `AddonPackages` yet, or the user asks to install:
+When the plugin is not available at
+`VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs`, or the user asks to
+install:
 
 1. Ask for `VAM_ROOT` if you do not have it.
-2. From this repo root, pack the plugin:
+2. Confirm `VAM_ROOT\VaM.exe` exists.
+3. From this repo root, install the loose plugin:
 
    ```powershell
-   .\scripts\pack-var.ps1 -Version 1
+   .\scripts\install-dev.ps1 -VamRoot "VAM_ROOT"
    ```
 
-   This writes `dist-var\VamMcp.Bridge.1.var`.
-3. Copy that file into the VAM install:
+   The script creates a junction when possible and otherwise copies the plugin
+   files. The script must end up at:
 
    ```
-   VAM_ROOT\AddonPackages\VamMcp.Bridge.1.var
+   VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs
    ```
 
 4. Stop. Tell the user they must, in VAM:
    - User Preferences -> Security -> Enable Plugins
-   - restart VAM if it was already running (so it rescans packages)
-   - Session Plugins -> Add Plugin -> `VamMcp.Bridge` -> `VamMcpBridge.cs`
+   - Session Plugins -> Add Plugin ->
+     `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`
    - leave `enabled` on
    - Session Plugin Presets -> Change User Defaults -> Set Current As User Defaults
 5. Do **not** click the VAM UI yourself. Do **not** kill `VaM.exe` unless the user asks.
+
+`pack-var.ps1` is for maintainers creating GitHub release artifacts. Do not use
+the packaged `.var` as the normal installation path; VaMX can report that the
+script inside the package "does not exist". Use the loose path above.
 
 Optional, if the MCP server is not installed yet (from repo `mcp\`):
 
@@ -57,7 +64,7 @@ Then point the current MCP client at that venv Python with env `VAM_ROOT` set to
 1. Virt-A-Mate / VaMX is running.
 2. `VamMcpBridge` is loaded under **Session Plugins** (not Scene Plugins, not on a Person) and `enabled` is on.
 3. MCP server `vam` is connected (`VAM_ROOT` = folder that contains `VaM.exe`).
-4. Call `status` first. If the plugin is missing or the call times out: run the install file steps above if needed, then tell the user to finish the Session Plugin clicks. Do not invent clicks in the VAM UI.
+4. Call `status` first. If the plugin is missing or the call times out: run the loose install steps above if needed, then tell the user to finish the Session Plugin clicks. Do not invent clicks in the VAM UI.
 
 ## Operating rules
 

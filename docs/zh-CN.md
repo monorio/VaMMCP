@@ -28,13 +28,13 @@ MCP 客户端 -> vam-mcp（Python）-> 本地 JSON 文件桥 -> VamMcpBridge（S
 
 ## 先告诉 Agent 你的 VAM 目录
 
-Agent 可以自动执行 `pack-var.ps1`，并把 `.var` 复制进 `AddonPackages`，但它**不能猜测** VAM 安装位置。
+Agent 可以把桥接插件安装到标准的本地脚本路径，但它**不能猜测** VAM 安装位置。
 
 安装前，请提供 **包含 `VaM.exe` 的文件夹完整路径**。这个路径就是 `VAM_ROOT`：
 
 ```text
 VAM_ROOT\VaM.exe
-VAM_ROOT\AddonPackages\
+VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs
 ```
 
 路径必须包含盘符和完整目录名。Agent 会先确认 `VaM.exe` 存在，然后才复制文件。
@@ -55,31 +55,19 @@ VAM 插件和 Python MCP 服务必须同时安装。插件必须添加到 Sessio
 
 ### 2. 安装 VamMcpBridge 插件
 
-推荐把 `VAM_ROOT` 发给 Agent，让它执行：
-
-1. 在仓库根目录运行：
-
-   ```powershell
-   .\scripts\pack-var.ps1 -Version 1
-   ```
-
-2. 将生成的 `dist-var\VamMcp.Bridge.1.var` 复制到：
-
-   ```text
-   VAM_ROOT\AddonPackages\VamMcp.Bridge.1.var
-   ```
-
-也可以从 [Releases](https://github.com/monorio/VaMMCP/releases) 手动下载 `.var`，放入 `AddonPackages`。
-
-如果复制文件时 VAM 已经在运行，需要重启 VAM，让它重新扫描包。
-
-开发安装方式（可选）：
+把 `VAM_ROOT` 发给 Agent，让它在仓库根目录执行：
 
 ```powershell
 .\scripts\install-dev.ps1 -VamRoot "VAM_ROOT"
 ```
 
-脚本会将插件链接或复制到 `VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs`。修改 `.cs` 文件后，需要在 Session Plugins 中对 VamMcpBridge 执行 Reload。
+脚本会优先创建目录联接，无法创建时则复制插件文件。最终必须存在以下文件：
+
+```text
+VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs
+```
+
+这是推荐且受支持的安装方式。部分 VaMX 版本虽然能够显示 `.var` 包，却会在加载时提示包内的 `VamMcpBridge.cs does not exist`。遇到这种情况不要选择包路径，直接使用上面的本地 `Custom/Scripts` 路径。修改 `.cs` 文件后，需要在 Session Plugins 中对 VamMcpBridge 执行 Reload。
 
 ### 3. 在 VAM 中启用插件
 
@@ -88,9 +76,7 @@ VAM 插件和 Python MCP 服务必须同时安装。插件必须添加到 Sessio
 1. 启动 VAM，按 `Esc`。
 2. 打开主菜单中的紫色 Session Plugins，不要打开 Person 身上的 Plugins。
 3. 点击 Add Plugin。
-4. 选择 `VamMcpBridge.cs`：
-   - `.var` 安装：包 `VamMcp.Bridge` -> `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`
-   - 开发安装：`Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`
+4. 从 VAM 本地目录选择 `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`。不要选择 `VamMcp.Bridge.N:/...` 包路径。
 5. 如果出现插件许可提示，选择 Allow。
 6. 确认插件行存在、`enabled` 已开启，状态显示类似 `ready`。
 7. 打开 Session Plugin Presets -> Change User Defaults -> Set Current As User Defaults。
@@ -181,6 +167,7 @@ VAM_ROOT = 'VAM_ROOT'
 | Add Plugin 没反应 | 先开启 User Preferences -> Security -> Enable Plugins |
 | 重启后插件消失 | 执行 Set Current As User Defaults |
 | `VaM.exe not found` | `VAM_ROOT` 不是包含 `VaM.exe` 的文件夹 |
+| 包路径提示 `VamMcpBridge.cs does not exist` | 运行 `.\scripts\install-dev.ps1 -VamRoot "VAM_ROOT"`，然后选择 `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs` |
 | 新增 Look 或 `.var` 后搜索不到 | 重启 MCP 服务，让目录缓存重新扫描 |
 | `setup_couple` 姿势失败 | 使用 `list_poses` / `load_pose`，或确认所需成对姿势包已安装 |
 

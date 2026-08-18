@@ -37,13 +37,13 @@ The bridge is a pair of local JSON files. Nothing is served on the network, and 
 
 ## Tell the agent your VAM folder
 
-The agent can pack `VamMcp.Bridge.1.var` and copy it into `AddonPackages`. It **cannot guess** where VAM is installed.
+The agent can install the bridge at the canonical loose-script path. It **cannot guess** where VAM is installed.
 
 Before asking it to install, send the **full path of the folder that contains `VaM.exe`**. That folder is `VAM_ROOT`. Example shape (use your real path):
 
 ```
 VAM_ROOT\VaM.exe
-VAM_ROOT\AddonPackages\
+VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs
 ```
 
 Do not omit the drive or folder names when you tell the agent. The agent must not invent a default path.
@@ -64,22 +64,19 @@ If you skip this, `Add Plugin` will either be missing or the script will sit the
 
 ### 2. Install the VamMcpBridge plugin
 
-**Preferred:** tell the agent your `VAM_ROOT` (the folder with `VaM.exe`) and ask it to install the plugin. It should:
-
-1. Run `.\scripts\pack-var.ps1 -Version 1` in this repo (writes `dist-var\VamMcp.Bridge.1.var`).
-2. Copy that file to `VAM_ROOT\AddonPackages\VamMcp.Bridge.1.var`.
-
-You can do the same by hand, or download `VamMcp.Bridge.N.var` from [Releases](https://github.com/monorio/VaMMCP/releases) and put it in `AddonPackages` yourself.
-
-If VAM was already running, **restart it** so it rescans packages.
-
-**Development copy** (optional, from this repo):
+Tell the agent your `VAM_ROOT` (the folder with `VaM.exe`) and ask it to install the plugin. From this repository it should run:
 
 ```powershell
 .\scripts\install-dev.ps1 -VamRoot "VAM_ROOT"
 ```
 
-That junctions (or copies) `plugin\` to `VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs`. After you edit the `.cs` file, open **Session Plugins** and click **Reload** on `VamMcpBridge`.
+That junctions `plugin\` into the VAM install when possible, and falls back to copying the files. The required result is:
+
+```text
+VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs
+```
+
+This loose path is the supported installation method. Some VaMX builds can list a packaged `.var` but then report that `VamMcpBridge.cs` "does not exist" when loading it. If you update the source after installation, open **Session Plugins** and click **Reload** on `VamMcpBridge`.
 
 ### 3. Enable the plugin in the game (you must do this)
 
@@ -88,9 +85,7 @@ The agent cannot click the VAM UI. Scene plugins are destroyed when a scene load
 1. Start VAM and open the main UI (`Esc`).
 2. Open the purple **Session Plugins** tab (main menu, not a Person atom).
 3. Click **Add Plugin**.
-4. In the file browser pick `VamMcpBridge.cs`:
-   - from a `.var`: package **`VamMcp.Bridge`** -> `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`
-   - from a dev install: `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`
+4. In the file browser pick `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs` from the local VAM folders. Do not select the packaged `VamMcp.Bridge.N:/...` path.
 5. If VAM asks to allow the plugin, choose **Allow**.
 6. Confirm the plugin row is present and:
    - the **`enabled`** toggle is on
@@ -260,18 +255,21 @@ Do not ask the user to click **On** or delete atoms by hand — `set_person_on` 
 | `Add Plugin` does nothing | **User Preferences -> Security -> Enable Plugins** |
 | Plugin vanishes after restart | Session Plugin Presets -> **Set Current As User Defaults** |
 | `VaM.exe not found` | `VAM_ROOT` is not the folder that contains `VaM.exe` |
-| `unknown op: set_expression` / `lock_head` | Old plugin. Update the `.cs` / `.var` and **Reload** the Session Plugin (need 0.5.0+ / 0.5.1+) |
+| Packaged path says `VamMcpBridge.cs does not exist` | Run `.\scripts\install-dev.ps1 -VamRoot "VAM_ROOT"`, then add `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs` |
+| `unknown op: set_expression` / `lock_head` | Old plugin. Update the loose `.cs` file and **Reload** the Session Plugin (need 0.5.0+ / 0.5.1+) |
 | New looks do not appear in `list_looks` | Restart the MCP server so it rescans `AddonPackages` |
 | `setup_couple` pose fails | Use `list_poses` / `load_pose`, or install the paired-pose package the server expects |
 | Ping script says no response | Same as timeout: VAM running, Session Plugin loaded, `enabled` on |
 | Agent ignores VAM tools | Workspace is not this repo (so `AGENTS.md` was not loaded), or the `vam` MCP server is not connected |
 | Agent asks for VAM_ROOT | Tell it the folder that contains `VaM.exe`. It will not guess. |
 
-## Pack a `.var` for GitHub Releases
+## Pack a `.var` for GitHub Releases (maintainers only)
 
 ```powershell
 .\scripts\pack-var.ps1 -Version 1
 ```
+
+This is a release-artifact task, not the recommended VaMX installation method. Users should install the loose script at `VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs`.
 
 Commit source only. Attach `dist-var/VamMcp.Bridge.1.var` to the GitHub Release. Do not commit `.var` files, looks, scenes, or a VAM install.
 

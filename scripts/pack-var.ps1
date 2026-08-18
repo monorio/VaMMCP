@@ -34,4 +34,4 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 Remove-Item $stage -Recurse -Force
 Write-Host "Wrote $varPath"
-Write-Host "Users copy this file into their VAM AddonPackages folder."
+Write-Host "Release artifact only. For normal installation, run scripts\install-dev.ps1 so the plugin is available under VAM_ROOT\Custom\Scripts."
