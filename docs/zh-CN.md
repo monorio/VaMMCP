@@ -2,9 +2,9 @@
 
 [English README](../README.md) | [Agent 操作规则](../AGENTS.md?plain=1)
 
-非官方 [Model Context Protocol](https://modelcontextprotocol.io/) 服务 + Virt-A-Mate Session 插件。通过支持 MCP 的 Agent，以对话方式加载本机已经存在的场景、Look、服装、姿势和表情。
+VamMCP 是一个面向 **Virt-A-Mate + vamX** 的非官方 [Model Context Protocol](https://modelcontextprotocol.io/) 集成。它由 Python MCP 服务和 Virt-A-Mate **Session Plugin** 组成，让支持 MCP 的 Agent 根据自然语言对话调用工具，操作游戏内的部分功能，例如切换人物/外观、服装、场景、姿势和面部表情。
 
-本项目与 Mesh VR / Virt-A-Mate 没有隶属、背书或官方支持关系。你需要自行拥有合法的 VAM 或 VaMX。详见 [NOTICE.md](../NOTICE.md?plain=1)。
+本项目与 Mesh VR、Virt-A-Mate 或 vamX 没有隶属、背书或官方支持关系。你需要合法拥有并使用相关软件和内容。详见 [NOTICE.md](../NOTICE.md?plain=1)。
 
 **本项目不能生成角色或衣服。** 它只能搜索并加载硬盘上已有的文件，也不会自动下载 Hub 内容。
 
@@ -13,7 +13,7 @@
 ## 工作原理
 
 ```text
-MCP 客户端 -> vam-mcp（Python）-> 本地 JSON 文件桥 -> VamMcpBridge（Session 插件）-> VAM
+MCP 客户端 -> vam-mcp（Python）-> 本地 JSON 文件桥 -> VamMcpBridge（Session Plugin）-> Virt-A-Mate + vamX
 ```
 
 文件桥完全在本机工作，不会在 Unity 内启动 HTTP 服务。
@@ -21,7 +21,7 @@ MCP 客户端 -> vam-mcp（Python）-> 本地 JSON 文件桥 -> VamMcpBridge（S
 ## 使用要求
 
 - Windows
-- Virt-A-Mate 1.20+，或安装目录中包含 `VaM.exe` 的 VaMX
+- Virt-A-Mate 1.20+ + vamX，安装目录中必须包含 `VaM.exe`
 - Python 3.10+
 - 支持 MCP 的客户端或编程 Agent，例如 Codex、Claude Code、Cursor、Grok、Copilot
 - VAM 安装目录中已经存在需要加载的 Look、场景、服装和姿势
@@ -69,15 +69,26 @@ VAM_ROOT\Custom\Scripts\VamMcp\Bridge\VamMcpBridge.cs
 
 这是推荐且受支持的安装方式。部分 VaMX 版本虽然能够显示 `.var` 包，却会在加载时提示包内的 `VamMcpBridge.cs does not exist`。遇到这种情况不要选择包路径，直接使用上面的本地 `Custom/Scripts` 路径。修改 `.cs` 文件后，需要在 Session Plugins 中对 VamMcpBridge 执行 Reload。
 
-### 3. 在 VAM 中启用插件
+### 3. 在 Virt-A-Mate + vamX 中启用插件
 
 这部分必须由用户在 VAM 界面中完成，Agent 不会代替用户点击 VAM UI。
 
-1. 启动 VAM，按 `Esc`。
-2. 打开主菜单中的紫色 Session Plugins，不要打开 Person 身上的 Plugins。
-3. 点击 Add Plugin。
+下面的截图来自 Virt-A-Mate 1.22 + vamX 1.52，不同版本的界面位置可能略有差异。
+
+1. 启动 Virt-A-Mate + vamX，在界面底部切换到 **Edit Mode (E)**。
+
+   <img src="../1.png" alt="步骤 1：将 Virt-A-Mate 和 vamX 切换到 Edit Mode" width="760">
+
+2. 点击左下方附近带有三条横线的主菜单按钮。
+
+   <img src="../2.png" alt="步骤 2：打开 Virt-A-Mate 主菜单" width="760">
+
+3. 选择紫色的 **Session Plugins**，然后点击 **Add Plugin**。必须使用主界面的 Session Plugins，不要添加到 Scene Plugins，也不要添加到 Person 身上的插件面板。
+
+   <img src="../3.png" alt="步骤 3：打开 Session Plugins 并点击 Add Plugin" width="760">
+
 4. 从 VAM 本地目录选择 `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs`。不要选择 `VamMcp.Bridge.N:/...` 包路径。
-5. 如果出现插件许可提示，选择 Allow。
+5. 如果 Virt-A-Mate 出现插件许可提示，选择 Allow。
 6. 确认插件行存在、`enabled` 已开启，状态显示类似 `ready`。
 7. 打开 Session Plugin Presets -> Change User Defaults -> Set Current As User Defaults。
 

@@ -4,9 +4,9 @@
 
 > **Agents (Codex, Claude Code, Cursor, Grok, Copilot, …):** read **[AGENTS.md](AGENTS.md?plain=1)** first and follow it. Do not improvise a VAM workflow from this README.
 
-Unofficial [Model Context Protocol](https://modelcontextprotocol.io/) server plus a Virt-A-Mate **session plugin**. Talk to an MCP-capable agent and load scenes, looks, clothing, poses, and expressions that already exist in your local VAM library.
+VamMCP is an unofficial [Model Context Protocol](https://modelcontextprotocol.io/) integration for **Virt-A-Mate + vamX**. It combines a Python MCP server with a Virt-A-Mate **Session Plugin**, allowing an MCP-capable agent to use tool calls from natural-language conversation to control supported in-game functions—for example switching characters/looks, clothing, scenes, poses, and facial expressions.
 
-This project is **not affiliated with Mesh VR or Virt-A-Mate**. You must own a legal copy of VAM or VaMX. See [NOTICE.md](NOTICE.md?plain=1).
+This project is **not affiliated with Mesh VR, Virt-A-Mate, or vamX**. You must own legal copies of the software and content you use. See [NOTICE.md](NOTICE.md?plain=1).
 
 **It does not generate characters or clothes.** It only searches and loads files already on disk.
 
@@ -20,7 +20,7 @@ Current pieces:
 ## How it works
 
 ```
-MCP client  ->  vam-mcp (Python)  ->  Saves/PluginData/vam-mcp/*.json  ->  VamMcpBridge (session plugin)  ->  SuperController
+MCP client  ->  vam-mcp (Python)  ->  Saves/PluginData/vam-mcp/*.json  ->  VamMcpBridge (Session Plugin)  ->  Virt-A-Mate + vamX
 ```
 
 The bridge is a pair of local JSON files. Nothing is served on the network, and nothing talks HTTP inside Unity.
@@ -28,7 +28,7 @@ The bridge is a pair of local JSON files. Nothing is served on the network, and 
 ## What you need
 
 - Windows
-- Virt-A-Mate **1.20+** or VaMX whose install folder contains `VaM.exe`
+- Virt-A-Mate **1.20+** with vamX, installed in a folder that contains `VaM.exe`
 - Python **3.10+** ([uv](https://github.com/astral-sh/uv) is optional)
 - An MCP client / coding agent (Codex, Claude Code, Cursor, Grok, Copilot, …)
 - Looks / scenes / clothing / poses already in that VAM install
@@ -82,11 +82,22 @@ This loose path is the supported installation method. Some VaMX builds can list 
 
 The agent cannot click the VAM UI. Scene plugins are destroyed when a scene loads. This one **must** stay on **Session Plugins**.
 
-1. Start VAM and open the main UI (`Esc`).
-2. Open the purple **Session Plugins** tab (main menu, not a Person atom).
-3. Click **Add Plugin**.
+The screenshots below show Virt-A-Mate 1.22 with vamX 1.52. The exact layout may vary slightly by version.
+
+1. Start Virt-A-Mate + vamX and switch the bottom mode selector to **Edit Mode (E)**.
+
+   <img src="1.png" alt="Step 1: switch Virt-A-Mate and vamX to Edit Mode" width="760">
+
+2. Click the main menu button with three horizontal lines near the lower-left corner.
+
+   <img src="2.png" alt="Step 2: open the Virt-A-Mate main menu" width="760">
+
+3. Select the purple **Session Plugins** tab, then click **Add Plugin**. Use the main Session Plugins panel—not Scene Plugins and not a plugin panel on a Person atom.
+
+   <img src="3.png" alt="Step 3: open Session Plugins and click Add Plugin" width="760">
+
 4. In the file browser pick `Custom/Scripts/VamMcp/Bridge/VamMcpBridge.cs` from the local VAM folders. Do not select the packaged `VamMcp.Bridge.N:/...` path.
-5. If VAM asks to allow the plugin, choose **Allow**.
+5. If Virt-A-Mate asks to allow the plugin, choose **Allow**.
 6. Confirm the plugin row is present and:
    - the **`enabled`** toggle is on
    - the status text says something like `ready  root=...`
